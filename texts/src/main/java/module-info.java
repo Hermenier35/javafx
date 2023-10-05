@@ -1,4 +1,4 @@
-module com.example.texts {
+module fr.istic.we {
     requires javafx.controls;
     requires javafx.fxml;
     requires java.logging;
