@@ -14,7 +14,7 @@ public class DnDApplication extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(DnDApplication.class.getResource("Dnd.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(DnDApplication.class.getResource("DnD.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), STAGE_WIDTH, STAGE_HEIGHT);
         stage.setTitle("Drag and drop example");
         stage.setScene(scene);
