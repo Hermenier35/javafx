@@ -3,22 +3,21 @@ package fr.istic.hanoi;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.HPos;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.RowConstraints;
+import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
+import javafx.scene.Scene;
+
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -35,7 +34,9 @@ public class HanoiController implements Initializable {
 
     private HanoiModel model;
     private Map<Integer, MyRectangle> discViews = new HashMap<>();
-    private HanoiShape shape;
+    private ArrayList<StackPane> piliers = new ArrayList<>();
+    private int numberOfDisks;
+    private int heightDisk;
 
 
     @Override
@@ -44,33 +45,35 @@ public class HanoiController implements Initializable {
         Logger.getGlobal().info("Controller initialisation");
 
         //Create a model just for testing
-        model = new HanoiModelImpl(3);
-        shape = new HanoiShape(3, 600);
-        Font textFont = new Font("Helvetica", 20);
+        this.numberOfDisks = 6;
+        this.heightDisk = 30;
+        model = new HanoiModelImpl(numberOfDisks);
+        HanoiShape shape = new HanoiShape(numberOfDisks, 600, heightDisk);
         
-        for(int i = 0; i<3; i++ ) {
+        for(int i = 0; i < 3; i++ ) {
+        	StackPane stack = new StackPane();
         	Rectangle pilier = shape.getCylinder();
-        	GridPane.setHalignment(pilier, HPos.CENTER);
-        	GridPane.setValignment(pilier, VPos.TOP);
-        	grid.addColumn(i, pilier);
+        	stack.getChildren().add(pilier);
+        	stack.setAlignment(Pos.BOTTOM_CENTER);
+        	piliers.add(stack);
+        	grid.addColumn(i, stack);
         }
         
+        
+        StackPane firstPilier = piliers.get(0);
         for (Integer i : model.getStack(1)) {
-            //Text t = new Text(i.toString());
-            //t.setFont(textFont);
-            //t.setTextAlignment(TextAlignment.CENTER);
-        	System.out.println("value i : " + i);
         	MyRectangle rect = shape.getRectangles().get(i-1);
             discViews.put(i, rect);
             rect.setNumberDisk(i);
-            GridPane.setHalignment(rect, HPos.CENTER);
-            grid.add(rect, 0, i);
+            int n = firstPilier.getChildren().size();
+            rect.setTranslateY((n-1) * (-heightDisk));
+            firstPilier.getChildren().add(rect);
             rect.setOnDragDetected(de -> onDragDetected(de, rect));
             grid.setOnDragOver(this::onDragOver);
             grid.setOnDragDropped(this::onDragDropped);
             grid.setOnDragDone(this::onDragDone);
-           // Logger.getGlobal().info(String.format("Added a new text %s"));
         }
+              
        
         Logger.getGlobal().info(String.format("taille stack : " + model.getStack(1).size()));
        
@@ -110,12 +113,14 @@ public class HanoiController implements Initializable {
         
         int colonneCible = getColonne(dragEvent.getX());
         int colonneSource = rect.getColonne();
-  
-    	if(model.isValidMove(colonneSource + 1, colonneCible + 1) && model.getStack(colonneSource+1).getFirst()== rect.getNumberDisk()) {
+        int indexFirstDisk = piliers.get(colonneSource).getChildren().size()-1;
+        MyRectangle firstDisk = (MyRectangle)piliers.get(colonneSource).getChildren().get(indexFirstDisk);
+    	if(model.isValidMove(colonneSource + 1, colonneCible + 1) && firstDisk.getNumberDisk()== rect.getNumberDisk()) {
     		MyRectangle r = discViews.get(rect.getNumberDisk());
-    		grid.getChildren().remove(r);
-    		GridPane.setHalignment(r, HPos.CENTER);
-    		grid.add(r, colonneCible, 3 - model.getStack(colonneCible + 1).size());
+    		int n = piliers.get(colonneCible).getChildren().size();
+            r.setTranslateY((n-1) * (-heightDisk));
+    		piliers.get(colonneSource).getChildren().remove(r);
+    		piliers.get(colonneCible).getChildren().add(r);
     		r.setColonne(colonneCible);
     		try {
  				model.move(colonneSource + 1, colonneCible + 1);
