@@ -7,29 +7,42 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+
+
 
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.istic.hanoi.HanoiController">
    <top>
-      <MenuBar BorderPane.alignment="CENTER">
-        <menus>
-          <Menu mnemonicParsing="false" text="File">
-            <items>
-                  <MenuItem mnemonicParsing="false" text="New" />
-              <MenuItem mnemonicParsing="false" text="Close" />
-            </items>
-          </Menu>
-          <Menu mnemonicParsing="false" text="Edit">
-            <items>
-              <MenuItem mnemonicParsing="false" text="Delete" />
-            </items>
-          </Menu>
-          <Menu mnemonicParsing="false" text="Help">
-            <items>
-              <MenuItem mnemonicParsing="false" text="About" />
-            </items>
-          </Menu>
-        </menus>
-      </MenuBar>
+   	 <VBox>
+	      <MenuBar BorderPane.alignment="CENTER">
+	        <menus>
+	          <Menu mnemonicParsing="false" text="File">
+	            <items>
+	                  <MenuItem fx:id="menuItemNew" mnemonicParsing="false" text="New" />
+	              <MenuItem fx:id="menuItemClose" mnemonicParsing="false" text="Close" />
+	            </items>
+	          </Menu>
+	          <Menu mnemonicParsing="false" text="Edit">
+	            <items>
+	              <MenuItem fx:id="easy" mnemonicParsing="false" text="Easy" />
+	              <MenuItem fx:id="medium" mnemonicParsing="false" text="Medium" />
+	              <MenuItem fx:id="hard" mnemonicParsing="false" text="Hard" />
+	            </items>
+	          </Menu>
+	          <Menu mnemonicParsing="false" text="Help">
+	            <items>
+	              <MenuItem mnemonicParsing="false" text="About" />
+	            </items>
+	          </Menu>
+	        </menus>
+	      </MenuBar>
+	      <HBox>	
+	      	<Label fx:id="score" text="TURNS : " />
+	      	<Label fx:id="nbr" text="0" />
+	      </HBox>	
+      </VBox>
    </top>
    <center>
       <GridPane fx:id="grid" BorderPane.alignment="BOTTOM_LEFT">

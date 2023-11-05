@@ -2,19 +2,22 @@ package fr.istic.hanoi;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.HPos;
 import javafx.geometry.Pos;
-import javafx.geometry.VPos;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.Scene;
-
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -26,6 +29,15 @@ import java.util.logging.Logger;
 public class HanoiController implements Initializable {
     @FXML
     private GridPane grid;
+    
+    @FXML
+    private Label score, nbr;
+    
+    @FXML
+    private MenuItem menuItemNew, menuItemClose;
+    
+    @FXML
+    private MenuItem easy, medium, hard;
 
     @FXML
     protected void onFileNew() {
@@ -35,48 +47,27 @@ public class HanoiController implements Initializable {
     private HanoiModel model;
     private Map<Integer, MyRectangle> discViews = new HashMap<>();
     private ArrayList<StackPane> piliers = new ArrayList<>();
-    private int numberOfDisks;
     private int heightDisk;
+    private int numberOfDisks;
 
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
        
         Logger.getGlobal().info("Controller initialisation");
-
-        //Create a model just for testing
-        this.numberOfDisks = 6;
-        this.heightDisk = 30;
-        model = new HanoiModelImpl(numberOfDisks);
-        HanoiShape shape = new HanoiShape(numberOfDisks, 600, heightDisk);
+        Font customFont = Font.font("Minecraft",FontWeight.BOLD ,20);
+        score.setFont(customFont);
+        nbr.setFont(customFont);
+        HBox hbox = (HBox) score.getParent();
+        hbox.setAlignment(Pos.CENTER);
+        menuItemNew.setOnAction(this::handleMenuItemNewClick);
+        menuItemClose.setOnAction(this::handleMenuItemCloseClick);
+        easy.setOnAction(this::handleMenuItemEasyClick);
+        medium.setOnAction(this::handleMenuItemMediumClick);
+        hard.setOnAction(this::handleMenuItemHardClick);
+        this.numberOfDisks = 3;
         
-        for(int i = 0; i < 3; i++ ) {
-        	StackPane stack = new StackPane();
-        	Rectangle pilier = shape.getCylinder();
-        	stack.getChildren().add(pilier);
-        	stack.setAlignment(Pos.BOTTOM_CENTER);
-        	piliers.add(stack);
-        	grid.addColumn(i, stack);
-        }
-        
-        
-        StackPane firstPilier = piliers.get(0);
-        for (Integer i : model.getStack(1)) {
-        	MyRectangle rect = shape.getRectangles().get(i-1);
-            discViews.put(i, rect);
-            rect.setNumberDisk(i);
-            int n = firstPilier.getChildren().size();
-            rect.setTranslateY((n-1) * (-heightDisk));
-            firstPilier.getChildren().add(rect);
-            rect.setOnDragDetected(de -> onDragDetected(de, rect));
-            grid.setOnDragOver(this::onDragOver);
-            grid.setOnDragDropped(this::onDragDropped);
-            grid.setOnDragDone(this::onDragDone);
-        }
-              
-       
-        Logger.getGlobal().info(String.format("taille stack : " + model.getStack(1).size()));
-       
+        initializeGame();
     }
     
     private int getColonne(double x) {
@@ -94,9 +85,9 @@ public class HanoiController implements Initializable {
     
     private void onDragOver(DragEvent dragEvent) {
         dragEvent.acceptTransferModes(TransferMode.MOVE);     // State that a drop is possible
-        int colonne = getColonne(dragEvent.getX());
-
-        Logger.getGlobal().info(String.format("L'événement de glissement a eu lieu dans la colonne : (" + colonne + ")"));
+        //Mode Debug
+        //int colonne = getColonne(dragEvent.getX());
+        //Logger.getGlobal().info(String.format("L'événement de glissement a eu lieu dans la colonne : " + colonne));
         dragEvent.consume();
     }
     
@@ -117,11 +108,12 @@ public class HanoiController implements Initializable {
         MyRectangle firstDisk = (MyRectangle)piliers.get(colonneSource).getChildren().get(indexFirstDisk);
     	if(model.isValidMove(colonneSource + 1, colonneCible + 1) && firstDisk.getNumberDisk()== rect.getNumberDisk()) {
     		MyRectangle r = discViews.get(rect.getNumberDisk());
-    		int n = piliers.get(colonneCible).getChildren().size();
-            r.setTranslateY((n-1) * (-heightDisk));
+    		int n = piliers.get(colonneCible).getChildren().size()-1;
+            r.setTranslateY(n * (-heightDisk));
     		piliers.get(colonneSource).getChildren().remove(r);
     		piliers.get(colonneCible).getChildren().add(r);
     		r.setColonne(colonneCible);
+    		nbr.setText(String.valueOf(Integer.parseInt(nbr.getText())+1));
     		try {
  				model.move(colonneSource + 1, colonneCible + 1);
 			} catch (IllegalMoveException e) {
@@ -131,5 +123,66 @@ public class HanoiController implements Initializable {
     	}
         dragEvent.setDropCompleted(true);
         dragEvent.consume();
+    }
+    
+    private void initializeGame() {
+    	discViews.clear();
+    	piliers.clear();
+    	grid.getChildren().clear();
+    	nbr.setText(0+"");
+        this.heightDisk = 30;
+        model = new HanoiModelImpl(numberOfDisks);
+        HanoiShape shape = new HanoiShape(numberOfDisks, 600, heightDisk);
+        
+        for(int i = 0; i < 3; i++ ) {
+        	StackPane stack = new StackPane();
+        	Rectangle pilier = shape.getCylinder();
+        	stack.getChildren().add(pilier);
+        	stack.setAlignment(Pos.BOTTOM_CENTER);
+        	piliers.add(stack);
+        	grid.addColumn(i, stack);
+        }
+        
+        
+        StackPane firstPilier = piliers.get(0);
+        for (Integer i : model.getStack(1)) {
+        	MyRectangle rect = shape.getRectangles().get(i-1);
+            discViews.put(i, rect);
+            rect.setNumberDisk(i);
+            int n = firstPilier.getChildren().size() - 1;
+            rect.setTranslateY(n * (-heightDisk));
+            firstPilier.getChildren().add(rect);
+            rect.setOnDragDetected(de -> onDragDetected(de, rect));
+            grid.setOnDragOver(this::onDragOver);
+            grid.setOnDragDropped(this::onDragDropped);
+            grid.setOnDragDone(this::onDragDone);
+        }
+              
+       
+        Logger.getGlobal().info(String.format("taille stack : " + model.getStack(1).size()));
+
+    }
+    
+    private void handleMenuItemNewClick(ActionEvent event) {
+    	initializeGame();
+    }
+    
+    private void handleMenuItemCloseClick(ActionEvent event) {
+    	Platform.exit();
+    }
+    
+    private void handleMenuItemEasyClick(ActionEvent event) {
+    	this.numberOfDisks = 3;
+    	initializeGame();
+    }
+    
+    private void handleMenuItemMediumClick(ActionEvent event) {
+    	this.numberOfDisks = 4;
+    	initializeGame();
+    }
+    
+    private void handleMenuItemHardClick(ActionEvent event) {
+    	this.numberOfDisks = 6;
+    	initializeGame();
     }
 }
