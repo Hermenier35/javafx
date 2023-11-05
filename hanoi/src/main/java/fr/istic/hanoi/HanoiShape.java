@@ -3,8 +3,11 @@ package fr.istic.hanoi;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 import javafx.scene.paint.Color;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.*;
 
 public class HanoiShape{
@@ -61,6 +64,26 @@ public class HanoiShape{
 	public List<MyRectangle> getRectangles() {
 		return rectangles;
 	}
+	
+	
+	public LinearGradient getLinearGradient() {
+		return new LinearGradient(
+                0, 0, 1, 1, // Coordonnées de début et de fin du dégradé (0-1)
+                true, // Répétition du dégradé
+                null, // CycleMethod (null signifie aucun cycle)
+                new Stop(0, getRandomColor()), // Couleur au début (0)
+                new Stop(1, getRandomColor()) // Couleur à la fin (1)
+        );
+	}
+	
+	
+	public static Color getRandomColor() {
+        Random random = new Random();
+        double red = random.nextDouble();
+        double green = random.nextDouble();
+        double blue = random.nextDouble();
+        return new Color(red, green, blue, 1.0); // Alpha (transparence) est défini à 1.0 pour une couleur solide
+    }
 	
 	
 }

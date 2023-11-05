@@ -11,6 +11,7 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -49,6 +50,7 @@ public class HanoiController implements Initializable {
     private ArrayList<StackPane> piliers = new ArrayList<>();
     private int heightDisk;
     private int numberOfDisks;
+    private HanoiShape shape;
 
 
     @Override
@@ -86,7 +88,14 @@ public class HanoiController implements Initializable {
     private void onDragOver(DragEvent dragEvent) {
         dragEvent.acceptTransferModes(TransferMode.MOVE);     // State that a drop is possible
         //Mode Debug
-        //int colonne = getColonne(dragEvent.getX());
+        int colonne = getColonne(dragEvent.getX());
+        for(int i = 0; i < 3; i++) {
+        	Rectangle pilier = (Rectangle) piliers.get(i).getChildren().get(0);
+        	if(i==colonne)
+        		pilier.setFill(shape.getLinearGradient());
+        	else
+        		pilier.setFill(Color.BROWN);
+        }
         //Logger.getGlobal().info(String.format("L'événement de glissement a eu lieu dans la colonne : " + colonne));
         dragEvent.consume();
     }
@@ -132,7 +141,7 @@ public class HanoiController implements Initializable {
     	nbr.setText(0+"");
         this.heightDisk = 30;
         model = new HanoiModelImpl(numberOfDisks);
-        HanoiShape shape = new HanoiShape(numberOfDisks, 600, heightDisk);
+        this.shape = new HanoiShape(numberOfDisks, 600, heightDisk);
         
         for(int i = 0; i < 3; i++ ) {
         	StackPane stack = new StackPane();
