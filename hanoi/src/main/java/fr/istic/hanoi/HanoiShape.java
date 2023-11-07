@@ -30,7 +30,7 @@ public class HanoiShape{
 
 
 	public  Rectangle getCylinder() {
-		int heightCylinder = nbrDisk * heightDisk + 20;
+		int heightCylinder = nbrDisk * heightDisk + 30;
 		Rectangle rect = new Rectangle(15, heightCylinder, Color.BROWN);
 		rect.setArcHeight(20);
 		rect.setArcWidth(20);
