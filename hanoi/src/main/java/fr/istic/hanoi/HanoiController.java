@@ -208,7 +208,7 @@ public class HanoiController implements Initializable {
     }
     
     private void initializeView() {
-    	Image zinzin = new Image(System.getProperty("user.dir") + "\\src\\main\\resources\\fr\\istic\\images\\zinzin.png");
+    	Image zinzin = new Image(getClass().getResourceAsStream("zinzin.png"));
     	this.zinzinView = new ImageView(zinzin);
     	monBorderPane.getChildren().add(zinzinView);
     	zinzinView.setFitWidth(200); 
@@ -226,16 +226,7 @@ public class HanoiController implements Initializable {
         medium.setOnAction(this::handleMenuItemMediumClick);
         hard.setOnAction(this::handleMenuItemHardClick);
         about.setOnAction(this::handleMenuItemAboutClick);
-        Image image = null;
-        String relativePath = "\\src\\main\\resources\\fr\\istic\\images\\fond.png";
-        String absolutePath = System.getProperty("user.dir") + relativePath;
-        System.out.println(absolutePath);
-		try {
-			FileInputStream in = new FileInputStream(absolutePath);
-			image = new Image(in);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
+        Image image = new Image(getClass().getResourceAsStream("fond.png"));;
         
         if (image.isError()) {
             System.out.println("Erreur lors du chargement de l'image");
