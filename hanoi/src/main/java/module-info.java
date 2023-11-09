@@ -4,6 +4,7 @@ module fr.istic.hanoi {
     requires org.junit.jupiter.api;
     requires java.logging;
 	requires javafx.graphics;
+	requires javafx.base;
 
 
     opens fr.istic.hanoi to javafx.fxml, javafx.graphics, org.junit.platform.commons;

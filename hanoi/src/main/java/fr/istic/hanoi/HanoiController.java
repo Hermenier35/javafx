@@ -17,22 +17,30 @@ import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
+import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.animation.Animation;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
 import javafx.animation.SequentialTransition;
+import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -68,21 +76,137 @@ public class HanoiController implements Initializable {
     private Map<Integer, MyRectangle> discViews = new HashMap<>();
     private ArrayList<StackPane> piliers = new ArrayList<>();
     private int heightDisk;
-    private int numberOfDisks;
+    private Integer numberOfDisks;
     private HanoiShape shape;
     private ImageView zinzinView;
-    private SequentialTransition animationFirstPilier;
+    private Scene scene;
+    private HanoiAnimation animation;
 
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-    	
-    	StackPane gameView = new StackPane();
+    	initializeView();
+        this.numberOfDisks = 3;
+        initializeGame();        
+        grid.sceneProperty().addListener((observable, oldScene, newScene) -> {
+            if (newScene != null) {
+                this.scene = newScene;
+                this.animation = new HanoiAnimation(zinzinView, heightDisk, piliers, scene, discViews, this);
+                this.animation.animationZinzinOnFirstPilier();
+                
+                scene.widthProperty().addListener(event -> {
+                    this.animation.animationZinzinOnFirstPilier();
+                });
+            }
+        });
+        
+    }
+    
+    private int getColonne(double x) {
+    	double colIndex =  x / (grid.getWidth() / grid.getColumnCount());
+        return (int) colIndex;
+    }
+    
+    private void onDragDetected(MouseEvent mouseEvent, MyRectangle source) {
+    	Dragboard dragBoard = source.startDragAndDrop(TransferMode.ANY);
+        ClipboardContent content = new ClipboardContent();
+        content.put(MyCustomDataFormat.RECTANGLE, source);
+        dragBoard.setContent(content);
+        mouseEvent.consume();
+    }
+    
+    private void onDragOver(DragEvent dragEvent) {
+        dragEvent.acceptTransferModes(TransferMode.MOVE);    
+        int colonne = getColonne(dragEvent.getX());
+        for(int i = 0; i < 3; i++) {
+        	Rectangle pilier = (Rectangle) piliers.get(i).getChildren().get(0);
+        	if(i==colonne)
+        		pilier.setFill(shape.getLinearGradient());
+        	else
+        		pilier.setFill(Color.BROWN);
+        }
+        dragEvent.consume();
+    }
+    
+    private void onDragDone(DragEvent dragEvent) {
+        if (dragEvent.getTransferMode() == TransferMode.MOVE) {
+            dragEvent.getDragboard().clear();
+        }
+       if(piliers.get(2).getChildren().size()-1 == this.numberOfDisks) {
+        	this.animation.animationZinzinGoToLastPilier();
+        }
+        dragEvent.consume();
+    }
+    
+    private void onDragDropped(DragEvent dragEvent) {
+    	Dragboard db = dragEvent.getDragboard();
+        MyRectangle rect = (MyRectangle) db.getContent(MyCustomDataFormat.RECTANGLE);
+        
+        int colonneCible = getColonne(dragEvent.getX());
+        int colonneSource = rect.getColonne();
+        int indexFirstDisk = piliers.get(colonneSource).getChildren().size()-1;
+        MyRectangle firstDisk = (MyRectangle)piliers.get(colonneSource).getChildren().get(indexFirstDisk);
+    	if(model.isValidMove(colonneSource + 1, colonneCible + 1) && firstDisk.getNumberDisk()== rect.getNumberDisk()) {
+    		MyRectangle r = discViews.get(rect.getNumberDisk());
+    		Rectangle pilier = (Rectangle)piliers.get(colonneCible).getChildren().get(0);
+            r.setTranslateY(-pilier.getHeight());
+    		piliers.get(colonneSource).getChildren().remove(r);
+    		piliers.get(colonneCible).getChildren().add(r);
+    		this.animation.animation(r,piliers.get(colonneCible), pilier.getHeight());
+    		r.setColonne(colonneCible);
+    		nbr.setText(String.valueOf(Integer.parseInt(nbr.getText())+1));
+    		try {
+ 				model.move(colonneSource + 1, colonneCible + 1);
+			} catch (IllegalMoveException e) {
+				System.err.println("catch : error move");
+				e.printStackTrace();
+			}
+    	}
+        dragEvent.setDropCompleted(true);
+        dragEvent.consume();
+    }
+    
+    public void initializeGame() {
+    	discViews.clear();
+    	piliers.clear();
+    	grid.getChildren().clear();
+    	nbr.setText(0+"");
+        this.heightDisk = 30;
+        model = new HanoiModelImpl(numberOfDisks);
+        this.shape = new HanoiShape(numberOfDisks, 600, heightDisk);
+        
+        for(int i = 0; i < 3; i++ ) {
+        	StackPane stack = new StackPane();
+        	Rectangle pilier = shape.getCylinder();
+        	pilier.setTranslateY(10);
+        	stack.getChildren().add(pilier);
+        	stack.setAlignment(Pos.BOTTOM_CENTER);
+        	piliers.add(stack);
+        	grid.addColumn(i, stack);
+        }
+             
+        StackPane firstPilier = piliers.get(0);
+        for (Integer i : model.getStack(1)) {
+        	MyRectangle rect = shape.getRectangles().get(i-1);
+            discViews.put(i, rect);
+            rect.setNumberDisk(i);
+            int n = firstPilier.getChildren().size() - 1;
+            rect.setTranslateY(n * (-heightDisk));
+            firstPilier.getChildren().add(rect);
+            rect.setOnDragDetected(de -> onDragDetected(de, rect));
+            grid.setOnDragOver(this::onDragOver);
+            grid.setOnDragDropped(this::onDragDropped);
+            grid.setOnDragDone(this::onDragDone);
+        }
+              
+        Logger.getGlobal().info(String.format("taille stack : " + model.getStack(1).size()));
+    }
+    
+    private void initializeView() {
     	Image zinzin = new Image(System.getProperty("user.dir") + "\\src\\main\\resources\\fr\\istic\\images\\zinzin.png");
     	this.zinzinView = new ImageView(zinzin);
-    	//gameView.getChildren().addAll(monBorderPane, this.zinzinView);
     	monBorderPane.getChildren().add(zinzinView);
-    	zinzinView.setFitWidth(200);  // Largeur souhaitée
+    	zinzinView.setFitWidth(200); 
         zinzinView.setFitHeight(150);
         zinzinView.setTranslateY(20);
                 
@@ -123,146 +247,8 @@ public class HanoiController implements Initializable {
         );
         Background background = new Background(backgroundImage);
         grid.setBackground(background);
-        this.numberOfDisks = 3;
-        initializeGame();
     }
-    
-    private int getColonne(double x) {
-    	double colIndex =  x / (grid.getWidth() / grid.getColumnCount());
-        return (int) colIndex;
-    }
-    
-    private void onDragDetected(MouseEvent mouseEvent, MyRectangle source) {
-    	Dragboard dragBoard = source.startDragAndDrop(TransferMode.ANY);
-        ClipboardContent content = new ClipboardContent();
-        content.put(MyCustomDataFormat.RECTANGLE, source);
-        dragBoard.setContent(content);
-        mouseEvent.consume();
-    }
-    
-    private void onDragOver(DragEvent dragEvent) {
-        dragEvent.acceptTransferModes(TransferMode.MOVE);     // State that a drop is possible
-        //Mode Debug
-        int colonne = getColonne(dragEvent.getX());
-        for(int i = 0; i < 3; i++) {
-        	Rectangle pilier = (Rectangle) piliers.get(i).getChildren().get(0);
-        	if(i==colonne)
-        		pilier.setFill(shape.getLinearGradient());
-        	else
-        		pilier.setFill(Color.BROWN);
-        }
-        //Logger.getGlobal().info(String.format("L'événement de glissement a eu lieu dans la colonne : " + colonne));
-        dragEvent.consume();
-    }
-    
-    private void onDragDone(DragEvent dragEvent) {
-        if (dragEvent.getTransferMode() == TransferMode.MOVE) {
-            dragEvent.getDragboard().clear();
-        }
-        if(piliers.get(2).getChildren().size()-1 == this.numberOfDisks) {
-        	animationZinzinGoToLastPilier();
-        }
-        dragEvent.consume();
-    }
-    
-    private void onDragDropped(DragEvent dragEvent) {
-    	Dragboard db = dragEvent.getDragboard();
-        MyRectangle rect = (MyRectangle) db.getContent(MyCustomDataFormat.RECTANGLE);
-        
-        int colonneCible = getColonne(dragEvent.getX());
-        int colonneSource = rect.getColonne();
-        int indexFirstDisk = piliers.get(colonneSource).getChildren().size()-1;
-        MyRectangle firstDisk = (MyRectangle)piliers.get(colonneSource).getChildren().get(indexFirstDisk);
-    	if(model.isValidMove(colonneSource + 1, colonneCible + 1) && firstDisk.getNumberDisk()== rect.getNumberDisk()) {
-    		MyRectangle r = discViews.get(rect.getNumberDisk());
-    		Rectangle pilier = (Rectangle)piliers.get(colonneCible).getChildren().get(0);
-            r.setTranslateY(-pilier.getHeight());
-    		piliers.get(colonneSource).getChildren().remove(r);
-    		piliers.get(colonneCible).getChildren().add(r);
-    		animation(r,piliers.get(colonneCible), pilier.getHeight());
-    		r.setColonne(colonneCible);
-    		nbr.setText(String.valueOf(Integer.parseInt(nbr.getText())+1));
-    		try {
- 				model.move(colonneSource + 1, colonneCible + 1);
-			} catch (IllegalMoveException e) {
-				System.err.println("catch : error move");
-				e.printStackTrace();
-			}
-    	}
-        dragEvent.setDropCompleted(true);
-        dragEvent.consume();
-    }
-    
-    private void initializeGame() {
-    	discViews.clear();
-    	piliers.clear();
-    	grid.getChildren().clear();
-    	nbr.setText(0+"");
-        this.heightDisk = 30;
-        model = new HanoiModelImpl(numberOfDisks);
-        this.shape = new HanoiShape(numberOfDisks, 600, heightDisk);
-        
-        for(int i = 0; i < 3; i++ ) {
-        	StackPane stack = new StackPane();
-        	Rectangle pilier = shape.getCylinder();
-        	pilier.setTranslateY(10);
-        	stack.getChildren().add(pilier);
-        	stack.setAlignment(Pos.BOTTOM_CENTER);
-        	piliers.add(stack);
-        	grid.addColumn(i, stack);
-        }
-        
-        
-        StackPane firstPilier = piliers.get(0);
-        for (Integer i : model.getStack(1)) {
-        	MyRectangle rect = shape.getRectangles().get(i-1);
-            discViews.put(i, rect);
-            rect.setNumberDisk(i);
-            int n = firstPilier.getChildren().size() - 1;
-            rect.setTranslateY(n * (-heightDisk));
-            firstPilier.getChildren().add(rect);
-            rect.setOnDragDetected(de -> onDragDetected(de, rect));
-            grid.setOnDragOver(this::onDragOver);
-            grid.setOnDragDropped(this::onDragDropped);
-            grid.setOnDragDone(this::onDragDone);
-        }
-              
-        this.animationFirstPilier = animationZinzinOnFirstPilier();
-        
-        Logger.getGlobal().info(String.format("taille stack : " + model.getStack(1).size()));
 
-    }
-    
-    private void animation(MyRectangle disk, StackPane pilierTatget, double hauteurPilier) {
-    	int hauteur = pilierTatget.getChildren().size()-2;
-    	TranslateTransition translateTransition = new TranslateTransition(Duration.seconds(2), disk);
-        translateTransition.setByY(hauteurPilier - (hauteur * heightDisk));
-        translateTransition.setCycleCount(1);
-        translateTransition.play();
-    }
-    
-    private SequentialTransition animationZinzinOnFirstPilier() {
-    	Rectangle firstPilier = (Rectangle)piliers.get(0).getChildren().get(0);
-    	zinzinView.xProperty().bind(Bindings.createDoubleBinding(()-> firstPilier.getLayoutX() - 90, firstPilier.layoutXProperty()));
-    	zinzinView.yProperty().bind(Bindings.createDoubleBinding(()-> firstPilier.getLayoutY() - 200, firstPilier.layoutXProperty()));
-    	TranslateTransition translateDownTransition = new TranslateTransition(Duration.seconds(1), this.zinzinView);
-    	TranslateTransition translateUpTransition = new TranslateTransition(Duration.seconds(1), this.zinzinView);
-        translateDownTransition.setByY(10);
-        translateUpTransition.setByY(-10);
-        SequentialTransition bounceTransition = new SequentialTransition(translateDownTransition, translateUpTransition);
-        bounceTransition.setCycleCount(Animation.INDEFINITE);
-        bounceTransition.play();
-        return bounceTransition;
-    }
-    
-    private void animationZinzinGoToLastPilier() {
-    	Rectangle lastPilier = (Rectangle)piliers.get(2).getChildren().get(0);
-    	TranslateTransition translateTransition = new TranslateTransition(Duration.seconds(2), this.zinzinView);
-    	translateTransition.setToX(lastPilier.getParent().getLayoutX());
-    	System.out.println(lastPilier.getParent().getLayoutX());
-    	translateTransition.setCycleCount(1);
-    	translateTransition.play();
-    }
     
     private void handleMenuItemNewClick(ActionEvent event) {
     	initializeGame();
@@ -286,4 +272,13 @@ public class HanoiController implements Initializable {
     	this.numberOfDisks = 6;
     	initializeGame();
     }
+
+	public Integer getNumberOfDisks() {
+		return numberOfDisks;
+	}
+
+	public void setNumberOfDisks(Integer numberOfDisks) {
+		this.numberOfDisks = numberOfDisks;
+	}
+    
 }
