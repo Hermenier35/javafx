@@ -26,6 +26,7 @@ import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
@@ -65,6 +66,9 @@ public class HanoiController implements Initializable {
     private MenuItem easy, medium, hard;
     
     @FXML
+    private MenuItem about;
+    
+    @FXML
     private BorderPane monBorderPane;
 
     @FXML
@@ -85,6 +89,7 @@ public class HanoiController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+    	Logger.getGlobal().info("Controller initialisation");
     	initializeView();
         this.numberOfDisks = 3;
         initializeGame();        
@@ -210,7 +215,6 @@ public class HanoiController implements Initializable {
         zinzinView.setFitHeight(150);
         zinzinView.setTranslateY(20);
                 
-        Logger.getGlobal().info("Controller initialisation");
         Font customFont = Font.font("Minecraft",FontWeight.BOLD ,20);
         score.setFont(customFont);
         nbr.setFont(customFont);
@@ -221,6 +225,7 @@ public class HanoiController implements Initializable {
         easy.setOnAction(this::handleMenuItemEasyClick);
         medium.setOnAction(this::handleMenuItemMediumClick);
         hard.setOnAction(this::handleMenuItemHardClick);
+        about.setOnAction(this::handleMenuItemAboutClick);
         Image image = null;
         String relativePath = "\\src\\main\\resources\\fr\\istic\\images\\fond.png";
         String absolutePath = System.getProperty("user.dir") + relativePath;
@@ -271,6 +276,19 @@ public class HanoiController implements Initializable {
     private void handleMenuItemHardClick(ActionEvent event) {
     	this.numberOfDisks = 6;
     	initializeGame();
+    }
+    
+    private void handleMenuItemAboutClick(ActionEvent event) {
+    	Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("About Hanoi :");
+        alert.setHeaderText(null);
+        alert.setContentText("-La Tour de Hanoï est un jeu de puzzle avec trois piliers et des disques de différentes tailles empilés. \n" +
+        		"-L'objectif est de déplacer tous les disques vers le denier pilier en suivant ces règles : \n\n" +
+        		" 1) Vous ne pouvez déplacer qu'un disque à la fois. \n" +
+        		" 2) Un disque plus grand ne peut pas être placé sur un plus petit. \n" +
+        		"-Le but est de reproduire la pile initiale sur le dernier pilier. \n" + 
+        		"En cas de reussite, les Zinzins de l'espace ne manqueront pas de durcir la difficulté");
+        alert.showAndWait();
     }
 
 	public Integer getNumberOfDisks() {
